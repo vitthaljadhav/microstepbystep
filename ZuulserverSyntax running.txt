@@ -1,0 +1,20 @@
+http://localhost:8765/{application-name}/{url}      ->   syntax of zuul server
+
+http://localhost:8000/currency-exchange/from/USD/to/INR
+
+
+http://localhost:8765/{application-name}/{url}      -> syntax of zuul server
+http://localhost:8765/currency-exchange-service/currency-exchange/from/USD/to/INR
+
+
+http://localhost:8765/currency-conversion-service/currency-converter-feign/from/USD/to/INR/quantity/10
+
+http://localhost:8100/currency-converter-feign/from/USD/to/INR/quantity/10
+
+
+
+rabbitmq install link------>  https://www.youtube.com/watch?v=gKzKUmtOwR4
+
+
+**
+all services logs keep in rabbitmq and then it will pass to zipkin 
