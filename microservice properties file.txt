@@ -1,0 +1,212 @@
+
+
+--------------API Gateways------------------
+
+1. Authentication, authorization and security - only allow authorized person don't allow unauthorized
+2. rate limits.  - limit of call to each api as per hour and per day
+3. fault tolerance. - send back default response
+4. service Aggregation. - each person can request from multiple ways that we can provide the extrenal configuration
+
+--------------Zuul Api------------------
+three impt points
+1. set the component. mean set the project from www.start.spring.io and STS...etc.   
+2. suppose one service request to another service must be implement the receved request
+3. importat request willl be pass throught  zuul api
+
+add dependency
+                                    <dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-zuul</artifactId>
+		</dependency>
+
+
+go to main class and enable the  zuul sever
+@EnableZuulProxy 
+then to register the eureka server
+@EnableDiscoveryClient
+
+and go to properites file 
+
+spring.application.name=netflix-zuul-api-gateway-server   -> this name of Application
+server.port=8765   -> set port number
+eureka.client.service-url.default-zone=http://localhost:8761/eureka   -> this is register the service in eureka server
+
+than create on class 
+
+@Component
+public class ZullLoggingFilter extends ZuulFilter
+{
+private Logger log=LoggerFactory.getLogger(this.getClass());
+	
+	@Override
+	public boolean shouldFilter() {
+		return true;
+	}
+
+	@Override
+	public Object run() throws ZuulException {
+		
+		HttpServletRequest request = RequestContext.getCurrentContext().getRequest();
+		log.info("request ->{} request Uri ->{}"+request.getRequestURI());
+		return null;
+      // request ->{} request Uri ->{}/currency-conversion-service/currency-converter-fegin/from/USD/to/INR/quantity/100
+
+	}
+
+	@Override
+	public String filterType() {
+		return "pre";
+	}
+
+	@Override
+	public int filterOrder() {
+		return 1;
+	}
+
+}
+
+
+run the zuul server following step
+
+syntax:
+localhost:8765/{application-name}/{uri}
+
+example:localhost:8765/{            application-name    }/{                                   uri                                             }            
+http://localhost:8765/currency-conversion-service/currency-converter-fegin/from/USD/to/INR/quantity/100
+
+add a proxy class
+@FeignClient(name="netflix-zuul-api-gateway-server")
+RequestMapping(value="/currency-exchange-service/currency-exchange/from/{from}/to/{to}")
+	
+then we just call uri; this use only post filtering url
+http://localhost:8100/currency-converter-fegin/from/USD/to/INR/quantity/100
+
+if we want pre filter the request and post filtring   and we need this uri:
+
+syntax:
+localhost:8765/{application-name}/{uri}
+
+example:
+
+http://localhost:8765/currency-conversion-service/currency-converter-fegin/from/USD/to/INR/quantity/100
+
+
+
+
+-----Eureak Naming Server-----
+
+add some dependency like a eureka server,config client, devtools, Actuator
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-config</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+go to main class and Enable Eureka Server
+@EnableEurekaServer
+
+add properites file
+eureka.client.register-with-eureka=false   // itseft register in naming server
+eureka.client.fetch-registry=false
+
+fianlly launch application
+
+localhost:xxxx
+
+example:
+http://localhost:8761
+
+
+------------------Regiser the service into Eureka Server--------------
+
+add dependency
+
+<dependency>
+  <groupId>org.springframework.cloud</groupId> 
+  <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId> 
+  </dependency>
+
+add the dependecy in whatever service we want to register into eureka naming server
+
+go to main class Enable the Discovery Client
+@EnableDiscoveryClient
+
+add properties file
+
+eureka.client.server-url.default-zone=http://localhost:8761/eureka
+
+
+
+-----Only Fegin-----------
+add a fegin dependency
+
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+
+
+go to main class and active the fegin
+@EnableFeginClient("proxy class package name")
+example:
+@EnableFeignClients(basePackages= "com.example.demo.fign")
+
+then we should go the proxy class there add a annotation
+@FeignClient(name="whom will you want call the service name" ,url="url of service")
+
+example:
+@FeignClient(name="currency-exchange-service",url= "localhost:8001")
+
+
+------Ribbon with Fegin ----
+add a fegin dependency and ribbon
+
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+
+   
+                                  	<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-ribbon</artifactId>
+		</dependency>
+
+go to main class and active the fegin
+@EnableFeginClient("proxy class package name")
+example:
+@EnableFeignClients(basePackages= "com.example.demo.fign")
+
+this line write in proxy 
+@FeginClient("service name")
+
+example:
+@FeignClient(name="currency-exchange-service")
+
+@RibbonClient("service name")
+example:
+@RibbonClient(name="currency-exchange-service")
+
+the below the wrote in properties file
+spring.application.name.ribbon.listOfServers=http://localhost:8000, http://localhost:8001
+
+ example:
+currency-exchange-service.ribbon.listOfServers=http://localhost:8002,http://localhost:8001
